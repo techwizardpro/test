@@ -1,0 +1,171 @@
+#AI CREATE THIS CODE FOR TEST
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Koło Fortuny</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+
+    canvas {
+      border-radius: 50%;
+      background: #000;
+    }
+
+    #pointer {
+      position: absolute;
+      top: 0%;
+      width: 0;
+      height: 0;
+      border-left: 20px solid transparent;
+      border-right: 20px solid transparent;
+      border-top: 30px solid white;
+      z-index: 10;
+    }
+
+    #wheel-container {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #result {
+      margin-top: 30px;
+      font-size: 32px;
+      font-weight: bold;
+      color: #0f0;
+      text-shadow: 2px 2px 6px #000;
+    }
+  </style>
+</head>
+<body>
+  <div id="wheel-container">
+    <div id="pointer"></div>
+    <canvas id="wheel" width="500" height="500"></canvas>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("wheel");
+    const ctx = canvas.getContext("2d");
+    const wheelContainer = document.getElementById("wheel-container");
+    const resultDiv = document.getElementById("result");
+
+    const options = [
+      "10 pompek", "wpierdalam cebule", "gowno", "10 zl blik", "pizza dla wica",
+      "xd", "timeout dla wybranej osoby", "beka", "ło tego", "boks stop"
+    ];
+    const colors = [
+      "#FF0000", "#FF7F00", "#FFFF00", "#7FFF00", "#00FF00",
+      "#00FFFF", "#0000FF", "#8B00FF", "#FF00FF", "#FF1493"
+    ];
+
+    const radius = canvas.width / 2;
+    const segmentAngle = 2 * Math.PI / options.length;
+
+    let currentAngle = 0;
+    let spinning = false;
+
+    function drawWheel() {
+      for (let i = 0; i < options.length; i++) {
+        ctx.beginPath();
+        ctx.moveTo(radius, radius);
+        ctx.fillStyle = colors[i];
+        ctx.arc(
+          radius,
+          radius,
+          radius,
+          i * segmentAngle,
+          (i + 1) * segmentAngle
+        );
+        ctx.fill();
+        ctx.save();
+
+        ctx.translate(radius, radius);
+        ctx.rotate(i * segmentAngle + segmentAngle / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#000";
+        ctx.font = "16px sans-serif";
+        ctx.fillText(options[i], radius - 10, 5);
+        ctx.restore();
+      }
+    }
+
+    function spin() {
+      if (spinning) return;
+      spinning = true;
+      resultDiv.textContent = "";
+
+      wheelContainer.style.display = "flex"; // Pokaż koło
+
+      const selected = Math.floor(Math.random() * options.length);
+      const targetAngle = 2 * Math.PI * 5 + (Math.PI * 3 / 2) - (selected * segmentAngle + segmentAngle / 2);
+
+      const duration = 5000;
+      const start = performance.now();
+
+      function animate(now) {
+        const progress = Math.min((now - start) / duration, 1);
+        const ease = easeOutCubic(progress);
+        const angle = currentAngle + (targetAngle - currentAngle) * ease;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        ctx.translate(radius, radius);
+        ctx.rotate(angle);
+        ctx.translate(-radius, -radius);
+        drawWheel();
+        ctx.restore();
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          currentAngle = angle % (2 * Math.PI);
+          resultDiv.textContent = `${options[selected]}`;
+          spinning = false;
+
+          // Ukryj koło po 7 sekundach
+          setTimeout(() => {
+            wheelContainer.style.display = "none";
+          }, 7000);
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    function easeOutCubic(t) {
+      return 1 - Math.pow(1 - t, 3);
+    }
+
+    // Uruchom automatycznie spin przy załadowaniu DOM
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", spin);
+    } else {
+      spin();
+    }
+
+    // Pozostawiam też dostęp do wywołania spinExternally
+    window.spinExternally = spin;
+	
+	window.addEventListener("message", (event) => {
+  if (event.data === "spin") {
+    spin();
+  }
+});
+
+  </script>
+</body>
+</html>
